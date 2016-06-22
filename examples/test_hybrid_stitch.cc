@@ -4,6 +4,7 @@
 #include <jtflib/mesh/util.h>
 #include <boost/filesystem.hpp>
 #include <zjucad/matrix/io.h>
+#include <Eigen/CholmodSupport>
 
 #include "src/config.h"
 #include "src/json.h"
@@ -25,7 +26,7 @@ static double g_h;
 
 static void advance(VectorXd &xn, VectorXd &vn) {
   const size_t dim = xn.size();
-  SimplicialCholesky<SparseMatrix<double>> solver;
+  CholmodSimplicialLLT<SparseMatrix<double>> solver;
   VectorXd xstar = xn;
   for (size_t iter = 0; iter < 20; ++iter) {
     double value = 0; {
