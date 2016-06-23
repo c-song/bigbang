@@ -150,3 +150,8 @@ target_link_libraries(main_example_elastic
   bigbang
   ${Boost_LIBRARIES}
 )
+
+add_executable(test_glog test_glog.cc)
+target_link_libraries(test_glog
+  ${GLOG_LIBRARIES}
+)

@@ -47,6 +47,13 @@ endif(LBFGS_FOUND)
 # ARPACK
 find_package(Arpack REQUIRED)
 
+# GLOG
+find_package(Glog REQUIRED)
+if(GLOG_FOUND)
+  message("-- GLOG @ ${GLOG_INCLUDE_DIRS}")
+  include_directories(${GLOG_INCLUDE_DIRS})
+endif(GLOG_FOUND)
+
 # ALGLIB
 find_package(ALGLIB)
 if(ALGLIB_FOUND)
