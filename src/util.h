@@ -6,6 +6,8 @@
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
 #include <unordered_set>
+#include <hjlib/math/blas_lapack.h>
+#include <zjucad/matrix/lapack.h>
 
 #include "config.h"
 
@@ -166,9 +168,13 @@ int extract_triplets_from_spmat(const Eigen::SparseMatrix<T, Option> &A, std::ve
 
 template <typename T>
 void extract_rotation(const T *df, T *R) {
-  Eigen::Matrix<T, 3, 3> J(df);
-  Eigen::JacobiSVD<Eigen::Matrix<T, 3, 3>> svd(J, Eigen::ComputeFullU|Eigen::ComputeFullV);
-  Eigen::Map<Eigen::Matrix<T, 3, 3>>(R, 3, 3) = svd.matrixU()*svd.matrixV().transpose();
+  zjucad::matrix::matrix<T> F = zjucad::matrix::itr_matrix<const T *>(3, 3, df);
+  zjucad::matrix::matrix<T> U(3, 3), S(3, 3), VT(3, 3);
+  svd(F, U, S, VT);
+  zjucad::matrix::itr_matrix<T*>(3, 3, R) = U*VT;
+  // Eigen::Matrix<T, 3, 3> J(df);
+  // Eigen::JacobiSVD<Eigen::Matrix<T, 3, 3>> svd(J, Eigen::ComputeFullU|Eigen::ComputeFullV);
+  // Eigen::Map<Eigen::Matrix<T, 3, 3>>(R, 3, 3) = svd.matrixU()*svd.matrixV().transpose();
 }
 
 }

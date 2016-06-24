@@ -385,9 +385,11 @@ int elastic_potential::Gra(const double *x, double *gra) const {
   RETURN_WITH_COND_TRUE(w_ == 0.0);
   itr_matrix<const double *> X(3, dim_/3, x);
   itr_matrix<double *> G(3, dim_/3, gra);
+  matd_t vert(3, 4), x0(3, 4), grad(3, 4), K(12, 12), R(12, 12);
+  matd_t df(3, 3), rot(3, 3);
   for (size_t i = 0; i < tets_.size(2); ++i) {
-    matd_t vert = X(colon(), tets_(colon(), i)), x0;
-    matd_t grad = zeros<double>(3, 4), K(12, 12), R = zeros<double>(12, 12);
+    vert = X(colon(), tets_(colon(), i));
+    grad = zeros<double>(3, 4), R = zeros<double>(12, 12);
     switch ( type_ ) {
       case LINEAR:
         tet_linear_jac_(&grad[0], &vert[0], &Dm_(0, i), &vol_[i], &lam_, &miu_);
@@ -397,8 +399,7 @@ int elastic_potential::Gra(const double *x, double *gra) const {
         break;
       case COROTATIONAL: {
           tet_linear_hes_(&K[0], nullptr, &Dm_(0, i), &vol_[i], &lam_, &miu_);
-          matd_t df = (vert(colon(), colon(1, 3))-vert(colon(), 0)*ones<double>(1, 3))*itr_matrix<const double *>(3, 3, &Dm_(0, i));
-          matd_t rot(3, 3);
+          df = (vert(colon(), colon(1, 3))-vert(colon(), 0)*ones<double>(1, 3))*itr_matrix<const double *>(3, 3, &Dm_(0, i));
           extract_rotation(&df[0], &rot[0]);
           R(colon(0, 2), colon(0, 2)) = rot;
           R(colon(3, 5), colon(3, 5)) = rot;
@@ -422,9 +423,12 @@ int elastic_potential::Gra(const double *x, double *gra) const {
 int elastic_potential::Hes(const double *x, vector<Triplet<double>> *hes) const {
   RETURN_WITH_COND_TRUE(w_ == 0.0);
   itr_matrix<const double *> X(3, dim_/3, x);
+  matd_t vert(3, 4), H(12, 12), R(12, 12);
+  matd_t df(3, 3), rot(3, 3);
   for (size_t i = 0; i < tets_.size(2); ++i) {
-    matd_t vert = X(colon(), tets_(colon(), i));
-    matd_t H = zeros<double>(12, 12), R = zeros<double>(12, 12);
+    vert = X(colon(), tets_(colon(), i));
+    H = zeros<double>(12, 12);
+    R = zeros<double>(12, 12);
     switch ( type_ ) {
       case LINEAR:
         tet_linear_hes_(&H[0], nullptr, &Dm_(0, i), &vol_[i], &lam_, &miu_);
@@ -434,8 +438,7 @@ int elastic_potential::Hes(const double *x, vector<Triplet<double>> *hes) const 
         break;
       case COROTATIONAL: {
           tet_linear_hes_(&H[0], nullptr, &Dm_(0, i), &vol_[i], &lam_, &miu_);
-          matd_t df = (vert(colon(), colon(1, 3))-vert(colon(), 0)*ones<double>(1, 3))*itr_matrix<const double *>(3, 3, &Dm_(0, i));
-          matd_t rot(3, 3);
+          df = (vert(colon(), colon(1, 3))-vert(colon(), 0)*ones<double>(1, 3))*itr_matrix<const double *>(3, 3, &Dm_(0, i));
           extract_rotation(&df[0], &rot[0]);
           R(colon(0, 2), colon(0, 2)) = rot;
           R(colon(3, 5), colon(3, 5)) = rot;

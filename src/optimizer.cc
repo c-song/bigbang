@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <Eigen/UmfPackSupport>
+#include <Eigen/CholmodSupport>
 #include <lbfgs.h>
 
 #include "config.h"
@@ -22,6 +23,7 @@ int newton_solve(double *x, const size_t dim, const pfunc &f, const opt_args &ar
   }
   SimplicialCholesky<SparseMatrix<double>> sol;
   sol.setMode(SimplicialCholeskyLDLT);
+  // CholmodSimplicialLDLT<SparseMatrix<double>> sol;
   Map<VectorXd> X(x, dim);
   VectorXd xstar = X, dx(dim);
   for (size_t iter = 0; iter < args.max_iter; ++iter) {

@@ -43,24 +43,22 @@ struct argument {
   if ( i == frame )                                                     \
     dynamic_pointer_cast<ext_force_energy>(ebf[4])->RemoveForce(id);
 
-static opt_args optparam = {10000, 1e-8, false};
-
 int main(int argc, char *argv[])
 {
   po::options_description desc("Available options");
   desc.add_options()
       ("help,h", "produce help message")
-      ("input_mesh,i", po::value<string>(), "set the input mesh")
-      ("input_cons,c", po::value<string>(), "set the input positional constraints")
-      ("output_folder,o", po::value<string>(), "set the output folder")
-      ("density,d", po::value<double>()->default_value(1.0), "set the density")
-      ("timestep,t", po::value<double>()->default_value(0.01), "set the timestep")
-      ("total_frame,n", po::value<size_t>()->default_value(200), "set the frame number")
-      ("young_modulus,y", po::value<double>()->default_value(1e4), "set the young's modulus")
-      ("poisson_ratio,p", po::value<double>()->default_value(0.45), "set poisson ratio")
-      ("we", po::value<double>()->default_value(1.0), "set the number of input files to read")
-      ("wg", po::value<double>()->default_value(1.0), "set the gravity weight")
-      ("wp", po::value<double>()->default_value(1e3), "set the weight of position penalty")
+      ("input_mesh,i", po::value<string>(), "input mesh")
+      ("input_cons,c", po::value<string>(), "input positional constraints")
+      ("output_folder,o", po::value<string>(), "output folder")
+      ("density,d", po::value<double>()->default_value(1.0), "density")
+      ("timestep,t", po::value<double>()->default_value(0.01), "timestep")
+      ("total_frame,n", po::value<size_t>()->default_value(200), "frames")
+      ("young_modulus,y", po::value<double>()->default_value(1e4), "young's modulus")
+      ("poisson_ratio,p", po::value<double>()->default_value(0.45), "poisson ratio")
+      ("we", po::value<double>()->default_value(1.0), "elastic stiffness")
+      ("wg", po::value<double>()->default_value(1.0), "gravity stiffness")
+      ("wp", po::value<double>()->default_value(1e3), "position penalty stiffness")
       ;
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -84,10 +82,9 @@ int main(int argc, char *argv[])
   };
 
   if ( !boost::filesystem::exists(args.output_folder) )
-    boost::filesystem::create_directory(args.output_folder);
+    boost::filesystem::create_directories(args.output_folder);
 
-  mati_t tets;
-  matd_t nods;
+  mati_t tets; matd_t nods;
   jtf::mesh::tet_mesh_read_from_zjumat(args.input_mesh.c_str(), &nods, &tets); {
     char path[256];
     sprintf(path, "%s/rest.vtk", args.output_folder.c_str());
@@ -121,11 +118,14 @@ int main(int argc, char *argv[])
   const double intensity = 35;
 
   char outfile[256];
+  opt_args optparam = {1, 1e-8, false};
+  
   for (size_t i = 0; i < args.total_frame; ++i) {
     cout << "[info] frame " << i << endl;
     sprintf(outfile, "%s/frame_%zu.vtk", args.output_folder.c_str(), i);
     ofstream os(outfile);
     tet2vtk(os, &nods[0], nods.size(2), &tets[0], tets.size(2));
+    os.close();
 
     matd_t n = cross(nods(colon(), 167)-nods(colon(), 166), nods(colon(), 161)-nods(colon(), 167));
     matd_t o = (nods(colon(), 167)+nods(colon(), 166)+nods(colon(), 161))*ones<double>(3, 1)/3.0;
