@@ -21,6 +21,7 @@ using pfunc_t=std::shared_ptr<Functional<double>>;
  * 3-todo;
  * 4-Jacobi+chebyshev
  * 5-Direct+chebyshev
+ * 6-LBFGS
 */
 struct proj_dyn_args {
   double rho, h;
@@ -56,6 +57,7 @@ private:
   int advance_delta(double *x) const;
   int advance_epsilon(double *x) const;
   int advance_zeta(double *x) const;
+  int advance_eta(double *x) const;
 private:
   const mati_t &tris_;
   const matd_t &nods_;

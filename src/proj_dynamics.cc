@@ -98,9 +98,64 @@ int proj_dyn_spring_solver::advance(double *x) const {
     case 3: rtn = advance_delta(x); break;
     case 4: rtn = advance_epsilon(x); break;
     case 5: rtn = advance_zeta(x); break;
+    case 6: rtn = advance_eta(x); break;
     default: return __LINE__;
   }
   return rtn;
+}
+
+static vector<VectorXd> g_xval_seq, g_grad_seq;
+static vector<double> g_size;
+static const int SEQ_SIZE = 5;
+int proj_dyn_spring_solver::advance_eta(double *x) const {
+  ASSERT(args_.method == 6);
+  Map<VectorXd> X(x, dim_);
+  VectorXd xstar = X, dx(dim_), xnew(dim_);
+  const auto fms = dynamic_pointer_cast<fast_mass_spring>(impebf_[1]);
+  for (size_t iter = 0; iter < args_.maxiter; ++iter) {
+    double value = 0; {
+      if ( iter % 1000 == 0 ) {
+        impE_->Val(&xstar[0], &value);
+        cout << "\t@iter " << iter << " energy value: " << value << endl;
+      }
+    }
+    fms->LocalSolve(&xstar[0]);
+    VectorXd jac = VectorXd::Zero(dim_); {
+      impE_->Gra(&xstar[0], &jac[0]);
+    }
+    g_xval_seq.push_back(xstar);
+    g_grad_seq.push_back(jac);
+
+    // convergence test
+    const double curr_jac_norm = jac.norm();
+    if ( curr_jac_norm <= args_.eps ) {
+      cout << "\t@CONVERGED after " << iter << " iterations\n";
+      break;
+    }
+
+    // LBFGS update
+    VectorXd q = -jac;
+    if ( g_xval_seq.size() > SEQ_SIZE ) {
+      for (size_t i = 0; i < SEQ_SIZE; ++i) {
+      }
+    } else {
+      dx = ldlt_solver_.solve(q);
+    }
+
+    // line search step
+    double alpha = 2, value_next = 0;
+    do {
+      alpha /= 2;
+      xnew = xstar+alpha*dx;
+      value_next = 0;
+      impE_->Val(&xnew[0], &value_next);
+    } while ( value_next <= value+0.3*alpha*jac.dot(dx));
+    xstar = xnew;
+  }
+  // update configuration
+  dynamic_pointer_cast<momentum_potential>(impebf_[0])->Update(&xstar[0]);
+  X = xstar;
+  return 0;
 }
 
 int proj_dyn_spring_solver::advance_alpha(double *x) const { /// @brief Direct
