@@ -3,6 +3,8 @@
 #include <zjucad/matrix/itr_matrix.h>
 #include <jtflib/mesh/io.h>
 
+#include "src/vtk.h"
+
 using namespace std;
 using matrixst = zjucad::matrix::matrix<size_t>;
 using matrixd = zjucad::matrix::matrix<double>;
@@ -108,8 +110,11 @@ int main(int argc, char * argv[])
   matrixd node;
   vol2tet(argv[1], tet, node);
   orient_tet(node, tet);
-  if(jtf::mesh::tet_mesh_write_to_zjumat(argv[2], &node, &tet))
-    return __LINE__;
+  // if(jtf::mesh::tet_mesh_write_to_zjumat(argv[2], &node, &tet))
+  //   return __LINE__;
+  ofstream ofs(argv[2]);
+  tet2vtk(ofs, &node[0], node.size(2), &tet[0], tet.size(2));
+  ofs.close();
   cerr << "# [info] success." << endl;
   return 0;
 }
